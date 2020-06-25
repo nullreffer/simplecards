@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome
+
+form(method='POST' action='/joingame')
+  h1 Join Game
+  div.form-group
+    label(for='joingameid') Invite:
+    input#joingameid.form-control(type='text', placeholder='' name='joingameid' required='true' value=joingameid )
+  button.btn.btn-primary(type='submit') Submit
+
+
+form(method='POST' action='/newgame')
+  h1 New Game
+  div.form-group
+    label(for='name') Name:
+    input#name.form-control(type='text', placeholder='' name='name' required='true' value='' )
+  div.form-group
+    label(for='playerCount') # of Players:
+    input#playerCount.form-control(type='text', placeholder='' name='playerCount' required='true' value='' )
+  button.btn.btn-primary(type='submit') Submit

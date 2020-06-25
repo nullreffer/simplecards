@@ -1,0 +1,31 @@
+table(id="boardtable")
+  tbody
+    each row in board
+      tr
+        each col in row
+          td
+            if col.isTable
+              div Game status: #{col.gameStatus}
+              ul
+                each trade in col.trades
+                  li trade
+            else
+              div(class=col.isMe ? "me" : "")
+                if !col.isMe
+                  div(class="bidToken", onclick="acceptBid('#{col.uid}'")
+
+                ul
+                  each card in col.cards
+                    li(onclick="selectCard(this)")
+                      if col.isMe
+                        span(class="cardid") card.text
+                      img(src=card.img)
+                
+                if col.isMe
+                  input(id="bidCount", type="text", name="title")
+                  button(id="setBid", onclick="setBid('#{col.uid}')")
+                
+                  if col.activeTrade != null
+                    button(id="sendCards", onclick="sendCards()")
+                
+
