@@ -78,10 +78,19 @@ router.route('/games/:id/start').post((req, res, next) => {
 });
 
 router.route('/players/:id').get((req, res, next) => {
-    const playerid = req.cookies.playerid;
-    Player.findById(playerid, (error, data) => {
-        handle(res, error, data)
-    });
+    if (req.params.id == "me")
+    {
+        const playerid = req.cookies.playerid;
+        Player.findOne({ uid: playerid }, (error, data) => {
+            handle(res, error, data)
+        });
+    }
+    else {
+        const playerid = req.params.id;
+        Player.findById(playerid, (error, data) => {
+            handle(res, error, data)
+        });
+    }
 });
 
 router.route('/players/:id/setBid').post((req, res, next) => {

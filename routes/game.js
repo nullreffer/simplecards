@@ -12,10 +12,10 @@ router.get('/:id/board', async (req, res, next) => {
   const gameresponse = await axios.get('http://' + req.headers.host + '/api/games/' + req.params.id);
   const game = gameresponse.data;
   const playerid = req.cookies.playerid;
-  const players = game.players.map(async (pid) => {
+  const players = await Promise.all(game.players.map(async (pid) => {
     const playerresponse = await axios.get('http://' + req.headers.host + '/api/players/' + pid);
     return playerresponse.data;
-  });
+  }));
 
   players.forEach(p => p.isMe = p.uid == playerid);
   players.forEach(p => p.cards = p.cards.map(c => { return { text: c, img: "/images/" + (p.isMe ? "unknown" : c.split("-")[1]) + ".png" }; }));

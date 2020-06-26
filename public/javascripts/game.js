@@ -114,6 +114,8 @@ function onGameRunning(next)
 }
 
 function backgroundBoardRefresher() {
+refreshBoard(() => {}); return;
+
     if ($("#gamestatus").val() == "NotStarted")
         refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
     else if ($("#gamestatus").val() != "Ended")
