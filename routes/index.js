@@ -7,8 +7,8 @@ router.get('/', function(req, res, next) {
 });
 
 router.route('/newgame').post((req, res, next) => {
-  const created = await axios.post('http://' + req.hostname + '/api/game', {
-    name: req.body.name,
+  const created = await axios.post('http://' + req.hostname + '/api/games', {
+    name: req.body.name.replace(/\W/g, ''),
     playerCount: req.body.playerCount
   });
 
@@ -17,7 +17,7 @@ router.route('/newgame').post((req, res, next) => {
 
 router.route('/joingame').post((req, res, next) => {
   const joingameid = req.query.joingameid;
-  const player = await axios.post('http://' + req.hostname + '/api/game/' + joingameid + '/join', {
+  const player = await axios.post('http://' + req.hostname + '/api/games/' + joingameid + '/join', {
     name: req.body.name
   });
 

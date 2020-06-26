@@ -2,11 +2,12 @@ extends layout
 
 block includes
   script(type='text/javascript' src='public/javascripts/jquery-3.5.0.min.js')
-  script(type='text/javascript' src='public/javascripts/game.js')
+  script(type='text/javascript' src='public/javascripts/games.js')
 
 block content
   h1= title
   p Welcome to #{game.name}
   input(type="text" id="gameid" value=game._id)
   input(type="text" id="gamestatus" value=game.status)
+  input(type="text" id="gamewinner" value=game.winner)
   div(id="board")

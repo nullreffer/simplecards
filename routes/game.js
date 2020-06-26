@@ -3,29 +3,22 @@ var router = express.Router();
 
 /* GET game page. */
 router.get('/:id', function(req, res, next) {
-  const game = await axios.get('http://' + req.hostname + '/api/game/' + req.params.id);
+  const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
   res.render('game', game);
 });
 
 router.get('/:id/board', function(req, res, next) {
-  const game = await axios.get('http://' + req.hostname + '/api/game/' + req.params.id);
+  const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
   const playerid = req.cookies.playerid;
   const players = game.players.map(pid => {
     return await axios.get('http://' + req.hostname + '/api/players/' + pid);
   });
 
-  players.forEach(p => p.isMe = p._id == playerid);
+  players.forEach(p => p.isMe = p.uid == playerid);
   players.forEach(p => p.cards = p.cards.map(c => { return { text: c, img: "/images/" + (p.isMe ? "unknown" : c.split("-")[1]) + ".png" }; }));
 
-  const activeTrades = players.map(p => {
-    if (p.activeTrade == null) return null;
-    const trader = players.find(p2 => p.activeTrade == p2.activeTrade);
-    if (!trader) return null;
-    return trader.name + " <=> " + p.name;
-  }).filter(t => t != null);
-
-  const all = players.sort(p => p._id >= playerid ? "A" + p.createdAt : "Z" + p.createdAt); // me == all[0]
-  const table = { isTable: true, gameStatus: game.status, trades: activeTrades };
+  const all = players.sort(p => p.uid >= playerid ? "A" + p.createdAt : "Z" + p.createdAt); // me == all[0]
+  const table = { isTable: true, gamestatus: game.status };
 
   const boardConfigs = [
     [ [null, null, null], [null, table, null], [null, all[0], null] ], // 1 player
