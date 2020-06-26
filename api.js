@@ -148,10 +148,22 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
               Trade.deleteOne({_id: trade._id}, function(err){
                 if (err) { handle(res, error, trade); return; }
                 
-                adjustPlayerCards(players[0], trade.player1cards, trade.player2cards, (err) => {
+                adjustPlayerCards(players[0], trade.player1cards, trade.player2cards, (err, player1) => {
                     if (err) { handle(res, err, {}); return; }
-                    adjustPlayerCards(players[1], trade.player2cards, trade.player2cards, (err) => {
-                        handle(res, err, trade); return;
+                    adjustPlayerCards(players[1], trade.player2cards, trade.player1cards, (err, player2) => {
+                        var winner = ""
+                        if (player1.cards.every(c => c.split("-")[1] == player1.cards[0].split("-")[1])) winner += ";" + player1.name;
+                        if (player2.cards.every(c => c.split("-")[1] == player2.cards[0].split("-")[1])) winner += ";" + player2.name;
+
+                        if (winner != "") {
+                            Game.findOneAndUpdate(
+                                { _id: trade.game, winner: null },
+                                { winner: winner.substring(0) },
+                                (err, game) => {} // err means someone else won
+                            )
+                        }
+
+                        handle(res, err, trade);
                     });
                 });
               });
