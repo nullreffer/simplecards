@@ -1,8 +1,8 @@
-const app = express()
+const app = require('express')
 const router = app.Router()
 
 let Helper = require('./helper')
-let Game = require('./models/games')
+let Game = require('./models/game')
 let Player = require('./models/player')
 let Trade = require('./models/trade')
 
@@ -61,14 +61,14 @@ router.route('/games/:id/start').post((req, res, next) => {
         var deck = deckConfig.slice(0); Helper.shuffle(deck);
         var handSize = randomDeck.length / playerCount;
         var playerid = 0;
-        game.players.forEach(pid => {
+        game.players.forEach(async (pid) => {
             await Player.findByIdAndUpdate(
                 pid,
                 { cards: deck.slice(playerid * handSize, playerid * handSize + handSize) },
                 (error, game) => {
                     if (err) handle(res, error, game); // THIS WOULD SUCK
                 }
-            );
+            ).exec();
             playerid++;
         });
 
@@ -178,7 +178,7 @@ function adjustPlayerCards(playerid, remove, add, next)
     const newcards = cards.filter(c => !remove.some(rc => c == rc)).concat(add);
     Player.findOneAndUpdate(
         { uid: playerid },
-        { cards = newcards, activeTrade: null },
+        { cards: newcards, activeTrade: null },
         { new: true},
         (error, player) => {
             next(error, player);

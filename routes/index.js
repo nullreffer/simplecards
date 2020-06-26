@@ -2,11 +2,11 @@ var express = require('express');
 var router = express.Router();
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', (req, res, next) => {
   res.render('index', { joingameid: req.query.joingameid });
 });
 
-router.route('/newgame').post((req, res, next) => {
+router.route('/newgame').post(async (req, res, next) => {
   const created = await axios.post('http://' + req.hostname + '/api/games', {
     name: req.body.name.replace(/\W/g, ''),
     playerCount: req.body.playerCount
@@ -15,7 +15,7 @@ router.route('/newgame').post((req, res, next) => {
   res.redirect('/?joingameid=' + created._id);
 });
 
-router.route('/joingame').post((req, res, next) => {
+router.route('/joingame').post(async (req, res, next) => {
   const joingameid = req.query.joingameid;
   const player = await axios.post('http://' + req.hostname + '/api/games/' + joingameid + '/join', {
     name: req.body.name

@@ -118,8 +118,12 @@ function backgroundBoardRefresher() {
         refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
     else if ($("#gamestatus").val() != "Ended")
         onGameRunning(() => { setTimeout(backgroundBoardRefresher, 1000); });
-    else
+    else {
         $("#gamestatusmessage").html("Game ended. " + $("#gamewinner").val() + " won.")
+        $(".bidButton").prop("disabled", true);
+        $("#setbid").prop("disabled", true);
+        $("#sendCards").prop("disabled", true);
+    }
 }
 
 function refreshBoard(next) {

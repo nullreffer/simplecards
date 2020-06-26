@@ -2,15 +2,15 @@ var express = require('express');
 var router = express.Router();
 
 /* GET game page. */
-router.get('/:id', function(req, res, next) {
+router.get('/:id', async (req, res, next) => {
   const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
   res.render('game', game);
 });
 
-router.get('/:id/board', function(req, res, next) {
+router.get('/:id/board', async (req, res, next) => {
   const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
   const playerid = req.cookies.playerid;
-  const players = game.players.map(pid => {
+  const players = game.players.map(async (pid) => {
     return await axios.get('http://' + req.hostname + '/api/players/' + pid);
   });
 

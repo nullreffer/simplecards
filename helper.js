@@ -1,4 +1,4 @@
-methods.shuffle = function (a) {
+var shuffle = function(a) {
     var j, x, i;
     for (i = a.length - 1; i > 0; i--) {
         j = Math.floor(Math.random() * (i + 1));
@@ -9,4 +9,4 @@ methods.shuffle = function (a) {
     return a;
 }
 
-module.exports = methods;
+module.exports = shuffle;
