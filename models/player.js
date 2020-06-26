@@ -7,6 +7,6 @@ let Player = new Schema({
     currentBid: {type: Number, required: true},
     cards: [{type: String}],
     activeTrade: { type: Schema.ObjectId, ref: 'Trade' }
-}, { timestamps: true});
+}, { collection: 'players', timestamps: true });
 
 module.exports = mongoose.model('Player', Player)

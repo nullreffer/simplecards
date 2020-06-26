@@ -7,6 +7,6 @@ let Game = new Schema({
     status: {type: String, required: true},
     winner: {type: String, required: false},
     players: [{ type: Schema.ObjectId, ref: 'Player' }]
-}, { timestamps: true});
+}, { collection: 'cardgames', timestamps: true });
 
 module.exports = mongoose.model('Game', Game)

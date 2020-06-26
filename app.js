@@ -1,4 +1,5 @@
 var createError = require('http-errors');
+var mongoose = require('mongoose')
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
@@ -7,6 +8,21 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var gameRouter = require('./routes/game');
 var apiRouter = require('./api');
+var dataBaseConfig = require('./db');
+
+// Connecting mongoDB
+mongoose.Promise = global.Promise;
+mongoose.connect(dataBaseConfig.db, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false
+}).then(() => {
+  console.log('Database connected sucessfully ')
+},
+  error => {
+    console.log('Could not connected to database : ' + error)
+  }
+)
 
 var app = express();
 

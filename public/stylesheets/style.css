@@ -7,6 +7,10 @@ a {
   color: #00B7FF;
 }
 
+td {
+  border: 1px solid darkslategray;
+}
+
 li.selected {
   border: 4px cornflowerblue;
   margin-top: -10px;

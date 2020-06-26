@@ -9,7 +9,7 @@ let Trade = require('./models/trade')
 function handle(res, err, data)
 {
     if (err)
-        res.status(500).json({ message: err});
+        res.status(500).json({ message: JSON.stringify(err)});
     else
         res.status(200).json(data);
 }
@@ -21,9 +21,10 @@ router.route('/games/:id').get((req, res, next) => {
 });
 
 router.route('/games').post((req, res, next) => {
-    Game.create({ gameid: id, state: req.body}, (error, data) => {
-        handle(res, error, data);
-    });
+    Game.create(
+        { name: req.body.name, playerCount: req.body.playerCount, status: "NotStarted" }, 
+        (error, data) => handle(res, error, data)
+    );
 });
 
 router.route('/games/:id/join').post((req, res, next) => {

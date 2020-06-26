@@ -132,6 +132,6 @@ function refreshBoard(next) {
     });
 }
 
-$(document).load(function() {
+$(document).ready(function() {
     backgroundBoardRefresher();
 });

@@ -1,17 +1,20 @@
 var express = require('express');
 var router = express.Router();
+var axios = require('axios');
 
 /* GET game page. */
 router.get('/:id', async (req, res, next) => {
-  const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
-  res.render('game', game);
+  const response = await axios.get('http://' + req.headers.host + '/api/games/' + req.params.id);
+  res.render('game', { game: response.data });
 });
 
 router.get('/:id/board', async (req, res, next) => {
-  const game = await axios.get('http://' + req.hostname + '/api/games/' + req.params.id);
+  const gameresponse = await axios.get('http://' + req.headers.host + '/api/games/' + req.params.id);
+  const game = gameresponse.data;
   const playerid = req.cookies.playerid;
   const players = game.players.map(async (pid) => {
-    return await axios.get('http://' + req.hostname + '/api/players/' + pid);
+    const playerresponse = await axios.get('http://' + req.headers.host + '/api/players/' + pid);
+    return playerresponse.data;
   });
 
   players.forEach(p => p.isMe = p.uid == playerid);
