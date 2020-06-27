@@ -31,8 +31,8 @@ function shuffle(a) {
 
 function handle(res, err, data)
 {
-    if (err) {
-        console.log(err);
+    if (err || data == null) {
+        console.log(err ? err : "Data is null");
         res.status(500).json({ message: JSON.stringify(err)});
     }
     else
@@ -62,8 +62,8 @@ router.route('/games/:id/join').post((req, res, next) => {
             activeTrade: null
         },
         { upsert: true, new: true },
-        (err, player) => {
-            if (err) handle(res, err, {});
+        (error, player) => {
+            if (error || player == null) handle(res, error, {});
             else {
                 Game.updateOne(
                     {_id: req.params.id},
@@ -80,23 +80,26 @@ router.route('/games/:id/start').post((req, res, next) => {
       { status: "Running" },
       { new: true},
       async (error, game) => {
-        if (error) { handle(res, error, {}); return; }
+        if (error || game == null) { handle(res, error, {}); return; }
 
         const handSize = 9;
         const deck = createDeck(game.playerCount, handSize);
-        const playerid = 0;
-        await Promise.all(game.players.forEach(async (pid) => {
-            await Player.findByIdAndUpdate(
-                pid,
-                { cards: deck.slice(playerid * handSize, playerid * handSize + handSize) },
-                (error, game) => {
-                    if (error) handle(res, error, game); // THIS WOULD SUCK
-                }
-            ).exec();
-            playerid++;
-        }));
+        var playerix = 0;
 
-        handle(res, null, {});
+        try {
+            await Promise.all(game.players.map(async (pid) => {
+                const player = await Player.findByIdAndUpdate(
+                    pid,
+                    { cards: deck.slice(playerix * handSize, playerix * handSize + handSize) }
+                );
+                playerix++;
+                return player;
+            }));
+
+            handle(res, null, {});
+        } catch (error) {
+            handle(res, error, {});
+        }
     });
 });
 
@@ -137,7 +140,13 @@ router.route('/players/:id/setBid').post((req, res, next) => {
 router.route('/trades').get((req, res, next) => {
     const game = req.query.gameid;
     Trade.find({ game: game}, (error, trades) => {
-        handle(res, error, error ? {} : trades.map(t => [t.player1, t.player2]));
+        handle(res, error, error ? {} : trades);
+    });
+});
+
+router.route('/trades/:id').get((req, res, next) => {
+    Trade.findById(req.params.id, (error, trade) => {
+        handle(res, error, error ? {} : trade);
     });
 });
 
@@ -145,18 +154,18 @@ router.route('/trades').post((req, res, next) => {
     const players = [req.cookies.playerid, req.body.with].sort();
     const gameid = players[0].split(".")[0];
     Player.findOne({ uid: req.body.with, currentBid: req.body.ofcount }, (error, data) => {
-        if (error) { handle(res, "BidChanged:" + error, {}); return; }
+        if (error || data == null) { handle(res, "BidChanged:" + error, {}); return; }
 
         Trade.create(
-            { player1: players[0], player2: players[1], game: gameid },
+            { player1: players[0], player2: players[1], game: gameid, ofcount: req.body.ofcount },
             (error, trade) => {
-                if (error) { handle(res, "PlayerAlreadyTrading:" + error, {}); return; }
+                if (error || trade == null) { handle(res, "PlayerAlreadyTrading:" + error, {}); return; }
 
                 Player.findOneAndUpdate(
                     { uid: players[0] },
                     { activeTrade: trade._id },
                     (error, player) => {
-                      if (error) { handle(res, error, player); return; }
+                      if (error || player == null) { handle(res, error, player); return; }
 
                       Player.findOneAndUpdate(
                           { uid: players[1] },
@@ -173,24 +182,28 @@ router.route('/trades').post((req, res, next) => {
 });
 
 router.route('/trades/:id/sendCards').post((req, res, next) => {
-    const players = array.sort([req.cookies.playerid, req.body.to]);
+    const players = [req.cookies.playerid, req.body.to].sort();
     const setter = players[0] == req.cookies.playerid ? { player1cards: req.body.cards } : { player2cards: req.body.cards };
     Trade.findOneAndUpdate(
         { player1: players[0], player2: players[1] },
         setter,
         { new: true},
         (error, trade) => {
-          if (error) { handle(res, error, {}); return; }
+          if (error || trade == null) { handle(res, error, {}); return; }
 
-          if (trade.player1cards != null && trade.player2cards != null) {
+          if (trade.player1cards != null && trade.player2cards != null
+            && trade.player1cards.length == trade.ofcount
+            && trade.player2cards.length == trade.ofcount) {
               // TODO: make transactions
-              Trade.deleteOne({_id: trade._id}, function(err){
-                if (err) { handle(res, error, trade); return; }
+              Trade.deleteOne({_id: trade._id}, function(error){
+                if (error) { handle(res, error, trade); return; }
                 
-                adjustPlayerCards(players[0], trade.player1cards, trade.player2cards, (err, player1) => {
-                    if (err) { handle(res, err, {}); return; }
-                    adjustPlayerCards(players[1], trade.player2cards, trade.player1cards, (err, player2) => {
-                        var winner = ""
+                adjustPlayerCards(players[0], trade.player1cards, trade.player2cards, (error, player1) => {
+                    if (error || player1 == null) { handle(res, error, {}); return; }
+                    adjustPlayerCards(players[1], trade.player2cards, trade.player1cards, (error, player2) => {
+                        if (error || player2 == null) { handle(res, error, {}); return; }
+
+                        var winner = "";
                         if (player1.cards.every(c => c.split("-")[1] == player1.cards[0].split("-")[1])) winner += ";" + player1.name;
                         if (player2.cards.every(c => c.split("-")[1] == player2.cards[0].split("-")[1])) winner += ";" + player2.name;
 

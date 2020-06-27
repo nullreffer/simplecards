@@ -2,9 +2,13 @@ var express = require('express');
 var router = express.Router();
 var axios = require('axios');
 
+const names = ["gloriousberserkers","hairlessliches","dwarfchangelings","greensprites","harlequinwispmother","waterjackalopes","brassvalkyries","nightogres","darkvampires","scarlethags","lionsouls","blazingslimes","granitespriggans","snowanomalies","mammothscourge","trackerspectres","restlessleprechauns","scorpionmummies","huntinghippogriffs","westernsirens","summerrocs","hiddenskeletons","camouflagedbehemoths","darkcentaurs","brasscentaurs","overlordminotaurs","haunteddemons","armoredcyclopes","woodchangelings","deafskeletons","emeraldbehemoths","venomousatranochs","hairlesswendigos","goldencorruptions","goldenvampires","goldwyrms","diresuccubi","irongargoyles","amazonanubis","fakesouleaters","pinkwraiths","caverngorgons","terracottafauns","lurkingreapers","serpentshades","pinkwendigos","arcticmummies","pixypisces","revivedspriggans","glowchimeras"];
+
 /* GET home page. */
 router.get('/', (req, res, next) => {
-  res.render('index', { joingameid: req.query.joingameid });
+  var randomname = names[Math.floor(Math.random() * names.length)];
+  if (req.cookies.playerid) randomname = req.cookies.playerid;
+  res.render('index', { joingameid: req.query.joingameid, randomname: randomname });
 });
 
 router.route('/newgame').post(async (req, res, next) => {

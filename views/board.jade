@@ -1,4 +1,4 @@
-div
+div(id="boarddiv")
   input(type="text" class="hidden" id="gamestatus" value=game.status)
   input(type="text" class="hidden" id="gamewinner" value=game.winner)
   table(id="boardtable")
@@ -19,11 +19,13 @@ div
                 div(class=col.isMe ? "me" : "someone", data-id="#{col.uid}")
                   h3 #{col.name}
 
-                  if !col.isMe
-                    if col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
-                      button(class="bidButton", disabled="disabled", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
-                    else
-                      button(class="bidButton", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+                  if col.isMe
+                    input(type="text" class="hidden" id="mytrade" value=col.activeTrade)
+
+                  if col.isMe || col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
+                    button(class="bidButton", disabled="disabled", onclick=col.isMe ? "" : "acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+                  else
+                    button(class="bidButton", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
 
                   if col.isMe
                     input(id="bidCount", type="text", name="title", value="3")
@@ -31,6 +33,8 @@ div
                   
                     if col.activeTrade != null
                       button(id="sendCards", onclick="sendCards()") Send Cards
+                    else
+                      button(id="sendCards", disabled="disabled", onclick="sendCards()") Send Cards
 
                   ul(class="cardlist")
                     each card in col.cards

@@ -6,7 +6,13 @@ body {
   color: white;
 }
 
-html, body, #board { height: 95%; }
+html, body {
+  height: 95%; 
+}
+
+#boarddiv, #board { 
+  height: 95%; 
+}
 
 h1 {
   padding: 10px;
@@ -15,11 +21,6 @@ h1 {
 
 .hidden {
   display: none;
-}
-
-.block {
-  display: block;
-  height: 1px;
 }
 
 a {
@@ -46,7 +47,9 @@ a {
   text-align: center;
 }
 
-#board td:hover {border-width: 2px;}
+#board td:hover {
+  background: rgb(76, 76, 76);
+}
 
 #board input[type=text] {
   padding: 5px 10px;
@@ -119,7 +122,19 @@ a {
   padding: 5px 5px;
 }
 
+#activetrades {
+  height: 49%;
+  border-bottom: 2px solid lightskyblue;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
 
+#messages {
+  color: coral;
+  height: 50%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
 
 #gamestatusmessage {
   padding: 5px 15px;
