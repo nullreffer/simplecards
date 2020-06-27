@@ -17,11 +17,12 @@ router.get('/:id/board', async (req, res, next) => {
     return playerresponse.data;
   }));
 
-  players.forEach(p => p.isMe = p.uid == playerid);
-  players.forEach(p => p.cards = p.cards.map(c => { return { text: c, img: "/images/" + (p.isMe ? "unknown" : c.split("-")[1]) + ".png" }; }));
+  const me = players.find(p => p.uid == playerid); me.isMe = true;
+  players.forEach(p => p.cards = p.cards.map(c => { return { text: c, img: "/images/" + (!p.isMe ? "unknown" : c.split("-")[1]) + ".png" }; }));
 
-  const all = players.sort(p => p.uid >= playerid ? "A" + p.createdAt : "Z" + p.createdAt); // me == all[0]
-  const table = { isTable: true, gamestatus: game.status };
+  var all = players.sort((p1, p2) => p1.createdAt < p2.createdAt ? -1 : 1);
+  all = all.filter(p => p.createdAt >= me.createdAt).concat(all.filter(p => p.createdAt < me.createdAt));
+  const table = { isTable: true, gamestatus: game.status, canStart: players.length == game.playerCount && game.status == "NotStarted" };
 
   const boardConfigs = [
     [ [null, null, null], [null, table, null], [null, all[0], null] ], // 1 player
@@ -34,7 +35,7 @@ router.get('/:id/board', async (req, res, next) => {
     [ [all[3], all[4], all[5]], [all[2], table, all[6]], [all[1], all[0], all[7]] ] // 8 player
   ];
 
-  res.render('board', { board: boardConfigs[game.playerCount - 1], players: all });
+  res.render('board', { game: game, board: boardConfigs[game.playerCount - 1], players: all });
 });
 
 module.exports = router;

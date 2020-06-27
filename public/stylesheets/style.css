@@ -17,6 +17,11 @@ h1 {
   display: none;
 }
 
+.block {
+  display: block;
+  height: 1px;
+}
+
 a {
   color: #00B7FF;
 }
@@ -35,7 +40,7 @@ a {
 
 #board td {
   min-width: 100px;
-  width: 30%;
+  /* width: 30%; */
   padding: 5px;;
   border: 1px solid darkslategray;
   text-align: center;
@@ -69,7 +74,58 @@ a {
   background-color: #e7e7e7; color: black;
 }
 
-li.selected {
-  border: 4px cornflowerblue;
+#board .someone li {
+  list-style: none;
+  display: none;
+}
+
+#board .someone li:first-child {
+  list-style: none;
+  display: block;
+}
+
+#board .me li {
+  list-style: none;
+  position: relative;
+  float: left;
+  z-index: 1;
+  margin-left: -60px;
+}
+
+#board .me li:first-child {
+  margin-left: 0px;
+}
+
+#board .me li:hover {
+  z-index: 2;
+}
+
+#board .me li.selected {
+  border: 4px solid cornflowerblue;
+  border-radius: 5px;
   margin-top: -10px;
+}
+
+.card img {
+  width: 100px;
+  border-radius: 5px;
+}
+
+.card span {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  background-color: rgba(56, 56, 56, 0.5);
+  padding: 5px 5px;
+}
+
+
+
+#gamestatusmessage {
+  padding: 5px 15px;
+  float: right;
+  color: aqua;
+  font-family: "Lucida Console", Courier, monospace;
+  text-transform: uppercase;
+  font-size: 20px;
 }

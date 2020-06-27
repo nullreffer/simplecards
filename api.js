@@ -1,15 +1,40 @@
 const app = require('express')
 const router = app.Router()
 
-let Helper = require('./helper')
 let Game = require('./models/game')
 let Player = require('./models/player')
 let Trade = require('./models/trade')
 
+function createDeck(playerCount, handSize)
+{
+    const suits = ["basilisk","centaurus","chimera","hippogriff","manticore","medusa","pegasus","phoenix"];
+    shuffle(suits);
+    const deck = []
+    for (var x = 0; x < playerCount; x++)
+        for (var y = 1; y <= handSize; y++)
+            deck.push(y + "-" + suits[x])
+
+    shuffle(deck);
+    return deck;
+}
+
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
+}
+
 function handle(res, err, data)
 {
-    if (err)
+    if (err) {
+        console.log(err);
         res.status(500).json({ message: JSON.stringify(err)});
+    }
     else
         res.status(200).json(data);
 }
@@ -49,29 +74,27 @@ router.route('/games/:id/join').post((req, res, next) => {
     );
 });
 
-const deckConfig = ["1-basilisk","1-centaurus","1-chimera","1-hippogriff","1-manticore","1-medusa","1-pegasus","1-phoenix","1-basilisk","2-centaurus","2-chimera","2-hippogriff","2-manticore","2-medusa","2-pegasus","2-phoenix","3-basilisk","3-centaurus","3-chimera","3-hippogriff","3-manticore","3-medusa","3-pegasus","3-phoenix","4-basilisk","4-centaurus","4-chimera","4-hippogriff","4-manticore","4-medusa","4-pegasus","4-phoenix","5-basilisk","5-centaurus","5-chimera","5-hippogriff","5-manticore","5-medusa","5-pegasus","5-phoenix","6-basilisk","6-centaurus","6-chimera","6-hippogriff","6-manticore","6-medusa","6-pegasus","6-phoenix","7-basilisk","7-centaurus","7-chimera","7-hippogriff","7-manticore","7-medusa","7-pegasus","7-phoenix","8-basilisk","8-centaurus","8-chimera","8-hippogriff","8-manticore","8-medusa","8-pegasus","8-phoenix","9-basilisk","9-centaurus","9-chimera","9-hippogriff","9-manticore","9-medusa","9-pegasus","9-phoenix"];
-
 router.route('/games/:id/start').post((req, res, next) => {
     Game.findByIdAndUpdate(
       req.params.id,
-      { status: "Started" },
+      { status: "Running" },
       { new: true},
-      (error, game) => {
-        if (err) { handle(res, error, {}); return; }
+      async (error, game) => {
+        if (error) { handle(res, error, {}); return; }
 
-        var deck = deckConfig.slice(0); Helper.shuffle(deck);
-        var handSize = randomDeck.length / playerCount;
-        var playerid = 0;
-        game.players.forEach(async (pid) => {
+        const handSize = 9;
+        const deck = createDeck(game.playerCount, handSize);
+        const playerid = 0;
+        await Promise.all(game.players.forEach(async (pid) => {
             await Player.findByIdAndUpdate(
                 pid,
                 { cards: deck.slice(playerid * handSize, playerid * handSize + handSize) },
                 (error, game) => {
-                    if (err) handle(res, error, game); // THIS WOULD SUCK
+                    if (error) handle(res, error, game); // THIS WOULD SUCK
                 }
             ).exec();
             playerid++;
-        });
+        }));
 
         handle(res, null, {});
     });
@@ -81,6 +104,12 @@ router.route('/players/:id').get((req, res, next) => {
     if (req.params.id == "me")
     {
         const playerid = req.cookies.playerid;
+        Player.findOne({ uid: playerid }, (error, data) => {
+            handle(res, error, data)
+        });
+    }
+    else if (req.params.id.includes(".")){
+        const playerid = req.params.id;
         Player.findOne({ uid: playerid }, (error, data) => {
             handle(res, error, data)
         });
@@ -96,7 +125,7 @@ router.route('/players/:id').get((req, res, next) => {
 router.route('/players/:id/setBid').post((req, res, next) => {
     const playerid = req.cookies.playerid;
     Player.findOneAndUpdate(
-        { uid: playerId },
+        { uid: playerid },
         { currentBid: req.body.bid },
         { new: true},
         (error, player) => {
@@ -107,13 +136,13 @@ router.route('/players/:id/setBid').post((req, res, next) => {
 
 router.route('/trades').get((req, res, next) => {
     const game = req.query.gameid;
-    Player.find({ game: game}, (error, data) => {
-        if (error) handle(res, error, error ? {} : trades.map(t => [t.player1, t.player2]));
+    Trade.find({ game: game}, (error, trades) => {
+        handle(res, error, error ? {} : trades.map(t => [t.player1, t.player2]));
     });
 });
 
 router.route('/trades').post((req, res, next) => {
-    const players = array.sort([req.cookies.playerid, req.body.with]);
+    const players = [req.cookies.playerid, req.body.with].sort();
     const gameid = players[0].split(".")[0];
     Player.findOne({ uid: req.body.with, currentBid: req.body.ofcount }, (error, data) => {
         if (error) { handle(res, "BidChanged:" + error, {}); return; }
@@ -124,13 +153,13 @@ router.route('/trades').post((req, res, next) => {
                 if (error) { handle(res, "PlayerAlreadyTrading:" + error, {}); return; }
 
                 Player.findOneAndUpdate(
-                    { uid: player[0] },
+                    { uid: players[0] },
                     { activeTrade: trade._id },
                     (error, player) => {
                       if (error) { handle(res, error, player); return; }
 
                       Player.findOneAndUpdate(
-                          { uid: player[1] },
+                          { uid: players[1] },
                           { activeTrade: trade._id },
                           (error, player) => {
                             handle(res, error, player);

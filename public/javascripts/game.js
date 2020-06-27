@@ -1,3 +1,12 @@
+function startGame()
+{
+    const gameid = $("#gameid").val();
+    $.post("/api/games/" + gameid + "/start", {})
+     .done(() => {  })
+     .fail(() => showalert("It's all coming crashing down."))
+     .always(() => { });
+}
+
 function setBid() {
     const bidVal = $("#bidCount").val();
     $.post("/api/players/me/setBid", {bid: bidVal})
@@ -62,7 +71,7 @@ function onGameRunning(next)
         if (me.activeTrade) { $(".bidButton").prop("disabled", true ); }
 
         // remove old cards
-        cards.forEach(c => {
+        cards.each(c => {
             if (!me.cards.some(x => x == $(c).attr("data-id"))) $(c).slideDown(100, () => { $(c).remove(); });
         });
 
@@ -79,16 +88,17 @@ function onGameRunning(next)
     const getothers = $(".someone").each(function() {
         const someone = $(this);
         const pid = $(this).attr("data-id");
+        const gamestatus = $("#gamestatus").val();
         $.get("/api/players/" + pid)
         .done((player) => {
-            $(someone).find(".bidButton").prop("disabled", player.activeTrade ? true : false);
+            $(someone).find(".bidButton").prop("disabled", player.currentBid == 0 || player.activeTrade || gamestatus != "Running" ? true : false);
             $(someone).find(".bidButton").val(player.currentBid);
         }).fail(() => showalert("I think player " + pid.split(".")[1] + " is sleeping."))
         .always(() => { });
     });
 
     // refresh game and winner
-    const getgame = $.get("/api/games" + $("#gameid").val())
+    const getgame = $.get("/api/games/" + $("#gameid").val())
      .done((game) => {
         $("#gamestatus").val(game.status);
         $("#gamestatusmessage").html("Game status: " + game.status);
@@ -114,17 +124,23 @@ function onGameRunning(next)
 }
 
 function backgroundBoardRefresher() {
-refreshBoard(() => {}); return;
+// refreshBoard(() => {}); return;
 
-    if ($("#gamestatus").val() == "NotStarted")
-        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
-    else if ($("#gamestatus").val() != "Ended")
-        onGameRunning(() => { setTimeout(backgroundBoardRefresher, 1000); });
+    if ($("#gamestatus").val() == "NotStarted") {
+        $("#gamestatusmessage").html("Not Started");
+        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
+    }
+    else if ($("#gamestatus").val() != "Ended") {
+        $("#gamestatusmessage").html("Game status: Running");
+        refreshBoard(() => onGameRunning(() => { setTimeout(backgroundBoardRefresher, 5000); }));
+    }
     else {
-        $("#gamestatusmessage").html("Game ended. " + $("#gamewinner").val() + " won.")
-        $(".bidButton").prop("disabled", true);
-        $("#setbid").prop("disabled", true);
-        $("#sendCards").prop("disabled", true);
+        refreshBoard(() => {
+            $("#gamestatusmessage").html("Ended. " + $("#gamewinner").val() + " won.")
+            $(".bidButton").prop("disabled", true);
+            $("#setbid").prop("disabled", true);
+            $("#sendCards").prop("disabled", true);
+        });
     }
 }
 

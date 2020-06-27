@@ -1,32 +1,42 @@
-table(id="boardtable")
-  tbody
-    each row in board
-      tr
-        each col in row
-          td
-            if col == null
-              p &nbsp;
-            else if col.isTable
-              div(id="gamestatusmessage") Game status: #{col.gamestatus}
-              div(id="activetrades")
-              div(id="messages")
-            else
-              div(class=col.isMe ? "me" : "someone", data-id="#{col.uid}")
-                if !col.isMe
-                  button(class="bidButton", onclick="acceptBid('#{col.uid}'", value="0")
+div
+  input(type="text" class="hidden" id="gamestatus" value=game.status)
+  input(type="text" class="hidden" id="gamewinner" value=game.winner)
+  table(id="boardtable")
+    tbody
+      each row in board
+        tr
+          each col in row
+            td
+              if col == null
+                p &nbsp;
+              else if col.isTable
+                div(id="activetrades")
+                div(id="messages")
 
-                ul(class="cardlist")
-                  each card in col.cards
-                    li(class="card", data-id="#{card.text}" onclick="selectCard(this)")
-                      if col.isMe
-                        span card.text
-                      img(src=card.img)
-                
-                if col.isMe
-                  input(id="bidCount", type="text", name="title", value="3")
-                  button(id="setBid", onclick="setBid('#{col.uid}')") Set Bid
-                
-                  if col.activeTrade != null
-                    button(id="sendCards", onclick="sendCards()") Send Cards
-                
+                if (col.canStart)
+                  button(onclick="startGame()") Start Game
+              else
+                div(class=col.isMe ? "me" : "someone", data-id="#{col.uid}")
+                  h3 #{col.name}
+
+                  if !col.isMe
+                    if col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
+                      button(class="bidButton", disabled="disabled", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+                    else
+                      button(class="bidButton", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+
+                  if col.isMe
+                    input(id="bidCount", type="text", name="title", value="3")
+                    button(id="setBid", onclick="setBid('#{col.uid}')") Set
+                  
+                    if col.activeTrade != null
+                      button(id="sendCards", onclick="sendCards()") Send Cards
+
+                  ul(class="cardlist")
+                    each card in col.cards
+                      li(class="card", data-id="#{card.text}" onclick=col.isMe ? "selectCard(this)" : "")
+                        if col.isMe
+                          span #{card.text}
+                        img(src=card.img)
+                  
 
