@@ -6,6 +6,7 @@ let Game = new Schema({
     playerCount: {type: Number, required: true},
     status: {type: String, required: true},
     winner: {type: String, required: false},
+    history: [{type: String}],
     players: [{ type: Schema.ObjectId, ref: 'Player' }]
 }, { collection: 'cardgames', timestamps: true });
 

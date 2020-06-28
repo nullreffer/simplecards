@@ -7,6 +7,11 @@ function startGame()
      .always(() => { });
 }
 
+function replayGame()
+{
+    startGame();
+}
+
 function setBid() {
     if ($("#mytrade").val() != "" && $("#mytrade").val() != null)
     {
@@ -201,9 +206,13 @@ function backgroundBoardRefresher() {
     else if ($("#gamestatus").val() == "Ended") {
         refreshBoard(() => {
             $("#gamestatusmessage").html("Ended. " + $("#gamewinner").val() + " won.")
+            $("#messages").hide();
+            $("#activetrades").hide();
             $(".bidButton").prop("disabled", true);
             $("#setbid").prop("disabled", true);
             $("#sendCards").prop("disabled", true);
+
+            $("#boardcenter").add("<button onclick='replayGame()' >Play again</buttton>");
         });
     }
     else {

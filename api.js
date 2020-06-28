@@ -7,7 +7,8 @@ let Trade = require('./models/trade')
 
 function createDeck(playerCount, handSize)
 {
-    const suits = ["basilisk","centaurus","chimera","hippogriff","manticore","medusa","pegasus","phoenix"];
+    //const suits = ["basilisk","centaurus","chimera","hippogriff","manticore","medusa","pegasus","phoenix"];
+    const suits = ["bottlecaps","cubic","raremetals","renn","slug","smidgin","spice", "water"];
     shuffle(suits);
     const deck = []
     for (var x = 0; x < playerCount; x++)
@@ -207,14 +208,21 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
                         if (error || player2 == null) { handle(res, error, {}); return; }
 
                         var winner = "";
-                        if (player1.cards.every(c => c.split("-")[1] == player1.cards[0].split("-")[1])) winner += ";" + player1.name;
-                        if (player2.cards.every(c => c.split("-")[1] == player2.cards[0].split("-")[1])) winner += ";" + player2.name;
+                        if (player1.cards.every(c => c.split("-")[1] == player1.cards[0].split("-")[1])) winner += ";" + (player1.name + "-" + player1.cards[0].split("-")[1]);
+                        if (player2.cards.every(c => c.split("-")[1] == player2.cards[0].split("-")[1])) winner += ";" + (player2.name + "-" + player2.cards[0].split("-")[1]);
 
                         if (winner != "") {
                             Game.findOneAndUpdate(
                                 { _id: trade.game, winner: null },
                                 { status: "Ended", winner: winner.substring(1) },
-                                (err, game) => {} // err means someone else won
+                                (err, game) => {
+                                    if (err) { return; } // err means someone else won
+
+                                    Game.updateOne(
+                                        {_id: trade.game},
+                                        { $push: { history: winner } },
+                                        (error, data) => handle(res, error, player));
+                                } 
                             )
                         }
 

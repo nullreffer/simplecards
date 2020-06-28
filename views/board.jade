@@ -6,7 +6,7 @@ div(id="boarddiv")
       each row in board
         tr
           each col in row
-            td
+            td(id=col != null && col.isTable ? "boardcenter" : "")
               if col == null
                 p &nbsp;
               else if col.isTable

@@ -115,6 +115,7 @@ a {
 }
 
 .card span {
+  display: none;
   position: absolute;
   top: 8px;
   left: 16px;
