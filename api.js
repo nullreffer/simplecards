@@ -181,7 +181,6 @@ router.route('/trades').post((req, res, next) => {
 
 router.route('/trades/:id/sendCards').post((req, res, next) => {
     const players = [req.cookies.playerid, req.body.to].sort();
-    console.log("WWW" + JSON.stringify(req.body));
     const setter = players[0] == req.cookies.playerid ? { player1cards: req.body.cards } : { player2cards: req.body.cards };
     Trade.findOneAndUpdate(
         { player1: players[0], player2: players[1] },
@@ -189,6 +188,11 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
         { new: true},
         (error, trade) => {
           if (error || trade == null) { handle(res, error, {}); return; }
+
+          // remove cards I am sending
+          adjustPlayerCards(req.cookies.playerid, req.body.cards, [], (error, player1) => {
+            if (error || player1 == null) { handle(res, error, {}); return; }
+          });
 
           if (trade.player1cards != null && trade.player2cards != null
             && trade.player1cards.length == trade.ofcount
@@ -232,9 +236,11 @@ function adjustPlayerCards(playerid, remove, add, next)
             if (error || player == null) { next(error, player); return; }
 
             const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
+            const playertrade = newcards.length == player.cards.length ? null : player.trade;
+            const playerbid = newcards.length == player.cards.length ? 0 : player.currentBid;
             Player.findOneAndUpdate(
                 { uid: playerid },
-                { cards: newcards, activeTrade: null },
+                { cards: newcards, activeTrade: playertrade, currentBid: playerbid },
                 { new: true},
                 (error, player) => {
                     next(error, player);

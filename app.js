@@ -9,6 +9,7 @@ var indexRouter = require('./routes/index');
 var gameRouter = require('./routes/game');
 var apiRouter = require('./api');
 var dataBaseConfig = require('./db');
+let appInsights = require('applicationinsights');
 
 // Connecting mongoDB
 mongoose.Promise = global.Promise;
@@ -24,6 +25,7 @@ mongoose.connect(dataBaseConfig.db, {
   }
 )
 
+appInsights.start();
 var app = express();
 
 // view engine setup

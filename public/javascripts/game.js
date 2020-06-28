@@ -8,6 +8,12 @@ function startGame()
 }
 
 function setBid() {
+    if ($("#mytrade").val() != "" && $("#mytrade").val() != null)
+    {
+        showalert("Hold your spaceships, finish what you started first.");
+        return;
+    }
+
     const bidVal = $("#bidCount").val();
     $.post("/api/players/me/setBid", {bid: bidVal})
      .done(() => {  })
@@ -28,17 +34,25 @@ function acceptBid(playerid, bidButton) {
     // disable all other bid buttons
     $(bidButton).prop("disabled", true);
     const databid = $(bidButton).html();
+    const mybid = $(".me .bidButton").html();
+
+    if (databid != mybid) {
+        showalert("So you want to give " + mybid + "but you want to take " + databid + "? No, thank you.");
+        return;
+    }
+
     const me = $(".me").attr("data-id");
     $.get("/api/trades?gameid=" + $("#gameid").val())
      .done((trades) => { 
-        if (trades.some(t => t.player1 == me || t.player2 == me))
-        {
+        if (trades.some(t => t.player1 == me || t.player2 == me)) {
             showalert("You've got something else going on at the moment.");
             return;
         }
 
         $.post("/api/trades", {with: playerid, ofcount: databid})
-        .done((trade) => { $("#mytrade").val(trade._id) })
+        .done((trade) => { 
+            $("#mytrade").val(trade._id);
+        })
         .fail(() => {
             showalert("Oops, failed to bid, someone else was probably faster, or the player changed the bid.");
         })
@@ -56,6 +70,13 @@ function sendCards() {
     .done((trade) => {
         if (trade.ofcount != scards.length) {
             showalert("Uh oh, you selected a few cards too " + (scards.length > trade.ofcount ? "many." : "less." ));
+            return;
+        }
+
+        const allcards = $("div.me li.card").toArray().map((c) => $(c).attr("data-id"));
+        if (allcards.length != 9)
+        {
+            showalert("You'll go broke if you keep doing that." );
             return;
         }
 
@@ -164,17 +185,17 @@ function backgroundBoardRefresher() {
 
     if ($("#gamestatus").val() == "NotStarted") {
         $("#gamestatusmessage").html("Not Started");
-        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
+        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
     }
     else if ($("#gamestatus").val() == "Running") {
         $("#gamestatusmessage").html("Game status: Running");
         if (initialRefresh)
         {
             initialRefresh = false;
-            refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
+            refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
         }
         else {
-            onGameRunning(() => { setTimeout(backgroundBoardRefresher, 5000); });
+            onGameRunning(() => { setTimeout(backgroundBoardRefresher, 1000); });
         }
     }
     else if ($("#gamestatus").val() == "Ended") {
@@ -186,7 +207,7 @@ function backgroundBoardRefresher() {
         });
     }
     else {
-        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
+        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 1000); });
     }
 }
 
