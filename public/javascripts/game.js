@@ -24,52 +24,73 @@ function selectCard(li)
     }
 }
 
-function acceptBid(playerid, ofcount) {
+function acceptBid(playerid, bidButton) {
     // disable all other bid buttons
-    $(".bidButton").prop("disabled", true);
+    $(bidButton).prop("disabled", true);
+    const databid = $(bidButton).html();
+    const me = $(".me").attr("data-id");
+    $.get("/api/trades?gameid=" + $("#gameid").val())
+     .done((trades) => { 
+        if (trades.some(t => t.player1 == me || t.player2 == me))
+        {
+            showalert("You've got something else going on at the moment.");
+            return;
+        }
 
-    $.post("/api/trades", {with: playerid, ofcount: ofcount})
-     .done(() => {  })
+        $.post("/api/trades", {with: playerid, ofcount: databid})
+        .done((trade) => { $("#mytrade").val(trade._id) })
+        .fail(() => {
+            showalert("Oops, failed to bid, someone else was probably faster, or the player changed the bid.");
+        })
+        .always(() => { });
+     })
      .fail(() => {
-         showalert("Oops, failed to bid, someone else was probably faster, or the player changed the bid.");
+         showalert("Did you check all the valves.");
      })
      .always(() => { });
 }
 
 function sendCards() {
-    const cards = $("div.me li.selected").toArray().map(() => $(this).attr("data-id"));
+    const scards = $("div.me li.selected").toArray().map((c) => $(c).attr("data-id"));
     $.get("/api/trades/" + $("#mytrade").val())
     .done((trade) => {
-        if (trade.ofcount != cards.length) {
-            showalert("Uh oh, you selected a few cards too " + (cards.length > trade.ofcount ? "many." : "less." ));
+        if (trade.ofcount != scards.length) {
+            showalert("Uh oh, you selected a few cards too " + (scards.length > trade.ofcount ? "many." : "less." ));
             return;
         }
 
-        $.post("/api/trades/" + $("#mytrade").val() + "/sendCards", {cards: cards})
-        .done(() => { $("#mytrade").val("") })
+        const me = $(".me").attr("data-id");
+        const playerto = trade.player1 == me ? trade.player2 : trade.player1;
+        $.post("/api/trades/" + $("#mytrade").val() + "/sendCards", { cards: scards, to: playerto })
+        .done(() => { showmessage(trade.ofcount + " cards sent to " + playerto.split(".")[1] + "!!!") })
         .fail(() => showalert("Have you tried hitting the button harder?"))
         .always(() => { });
     }).fail(() => showalert("Yea... maybe try that again?"))
     .always(() => { });   
 }
 
+function showmessage(message)
+{
+    $("#messages").prepend("<p class='message'>" + message + "</p>");
+}
+
 function showalert(message)
 {
-    // alert(message);
-    $("#messages").prepend("<p>" + message + "</p>");
+    $("#messages").prepend("<p class='alert'>" + message + "</p>");
 }
 
 function onGameRunning(next)
 {
     // refresh me: cards, hide buttons if needed, 
+    var meTrading = false;
     const cards = $("div.me li.card");
     const getme = $.get("/api/players/me")
     .done((me) => {
         $("#setbid").prop("disabled", me.activeTrade ? true : false);
         $("#sendCards").prop("disabled", me.activeTrade ? false : true);
         $(".me .bidButton").html(me.currentBid);
-
-        if (me.activeTrade) { $(".bidButton").prop("disabled", true ); }
+        $("#mytrade").val(me.activeTrade)
+        if (me.activeTrade) { $(".bidButton").prop("disabled", true ); meTrading = true; }
 
         // remove old cards
         cards.each(cid => {
@@ -81,9 +102,10 @@ function onGameRunning(next)
         });
 
         // add new cards
-        me.cards.forEach(c => {
-            if (!cards.toArray().some(ci => $(ci).attr("data-id") == c)) {
-                $nc = $("<li class='card' data-id='" + c.text + "' onclick='selectCard(this)' ><span>" + c.text + "</span><img url='" + c.img + "' /></li>");
+        me.cards.forEach(cid => {
+            if (!cards.toArray().some(ci => $(ci).attr("data-id") == cid)) {
+                const c = { text: cid, img: "/images/" + cid.split("-")[1] + ".png" }
+                $nc = $("<li class='card' data-id='" + c.text + "' onclick='selectCard(this)' ><span>" + c.text + "</span><img src='" + c.img + "' /></li>");
                 $("div.me .cardlist").append($nc);
                 $nc.show();
             }
@@ -130,7 +152,10 @@ function onGameRunning(next)
      .always(() => { });
 
      $.when(getme, ...getothers, getgame, gettrades)
-     .done((me, others, game, trades) => { next() });
+     .done((me, others, game, trades) => { 
+        if (meTrading) $(".bidButton").prop("disabled", true);
+         next();
+    });
 }
 
 var initialRefresh = true;
@@ -141,7 +166,7 @@ function backgroundBoardRefresher() {
         $("#gamestatusmessage").html("Not Started");
         refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
     }
-    else if ($("#gamestatus").val() != "Ended") {
+    else if ($("#gamestatus").val() == "Running") {
         $("#gamestatusmessage").html("Game status: Running");
         if (initialRefresh)
         {
@@ -152,13 +177,16 @@ function backgroundBoardRefresher() {
             onGameRunning(() => { setTimeout(backgroundBoardRefresher, 5000); });
         }
     }
-    else {
+    else if ($("#gamestatus").val() == "Ended") {
         refreshBoard(() => {
             $("#gamestatusmessage").html("Ended. " + $("#gamewinner").val() + " won.")
             $(".bidButton").prop("disabled", true);
             $("#setbid").prop("disabled", true);
             $("#sendCards").prop("disabled", true);
         });
+    }
+    else {
+        refreshBoard(() => { setTimeout(backgroundBoardRefresher, 5000); });
     }
 }
 
@@ -169,5 +197,6 @@ function refreshBoard(next) {
 }
 
 $(document).ready(function() {
+    $.ajaxSetup({ traditional: true });
     backgroundBoardRefresher();
 });

@@ -10,11 +10,10 @@ div(id="boarddiv")
               if col == null
                 p &nbsp;
               else if col.isTable
-                div(id="activetrades")
-                div(id="messages")
-
+                div(id="activetrades", class=col.canStart ? "hidden" : "")
                 if (col.canStart)
-                  button(onclick="startGame()") Start Game
+                  button(onclick="startGame()", class="startbutton") Start Game
+                div(id="messages", class=col.canStart ? "hidden" : "")
               else
                 div(class=col.isMe ? "me" : "someone", data-id="#{col.uid}")
                   h3 #{col.name}
@@ -22,10 +21,10 @@ div(id="boarddiv")
                   if col.isMe
                     input(type="text" class="hidden" id="mytrade" value=col.activeTrade)
 
-                  if col.isMe || col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
-                    button(class="bidButton", disabled="disabled", onclick=col.isMe ? "" : "acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+                  if col.isMe || board[2][1].activeTrade != null || col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
+                    button(class="bidButton", disabled="disabled", onclick=col.isMe ? "" : "acceptBid('#{col.uid}', this)") #{col.currentBid}
                   else
-                    button(class="bidButton", onclick="acceptBid('#{col.uid}', #{col.currentBid})") #{col.currentBid}
+                    button(class="bidButton", onclick="acceptBid('#{col.uid}', this)") #{col.currentBid}
 
                   if col.isMe
                     input(id="bidCount", type="text", name="title", value="3")

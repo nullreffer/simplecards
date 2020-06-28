@@ -130,10 +130,14 @@ a {
 }
 
 #messages {
-  color: coral;
   height: 50%;
   overflow-y: scroll;
   overflow-x: hidden;
+  color: lightgreen;
+}
+
+#messages .alert{
+  color: coral;
 }
 
 #gamestatusmessage {
@@ -144,3 +148,8 @@ a {
   text-transform: uppercase;
   font-size: 20px;
 }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+ ::-webkit-scrollbar-thumb { background: #888; }
+::-webkit-scrollbar-thumb:hover { background: #555; }

@@ -84,15 +84,12 @@ router.route('/games/:id/start').post((req, res, next) => {
 
         const handSize = 9;
         const deck = createDeck(game.playerCount, handSize);
-        var playerix = 0;
-
         try {
-            await Promise.all(game.players.map(async (pid) => {
+            await Promise.all(game.players.map(async (pid, playerix) => {
                 const player = await Player.findByIdAndUpdate(
                     pid,
                     { cards: deck.slice(playerix * handSize, playerix * handSize + handSize) }
-                );
-                playerix++;
+                );                
                 return player;
             }));
 
@@ -153,8 +150,9 @@ router.route('/trades/:id').get((req, res, next) => {
 router.route('/trades').post((req, res, next) => {
     const players = [req.cookies.playerid, req.body.with].sort();
     const gameid = players[0].split(".")[0];
+    
     Player.findOne({ uid: req.body.with, currentBid: req.body.ofcount }, (error, data) => {
-        if (error || data == null) { handle(res, "BidChanged:" + error, {}); return; }
+        if (error || data == null) { handle(res, "BidChanged:" + error + ":" +data, {}); return; }
 
         Trade.create(
             { player1: players[0], player2: players[1], game: gameid, ofcount: req.body.ofcount },
@@ -183,6 +181,7 @@ router.route('/trades').post((req, res, next) => {
 
 router.route('/trades/:id/sendCards').post((req, res, next) => {
     const players = [req.cookies.playerid, req.body.to].sort();
+    console.log("WWW" + JSON.stringify(req.body));
     const setter = players[0] == req.cookies.playerid ? { player1cards: req.body.cards } : { player2cards: req.body.cards };
     Trade.findOneAndUpdate(
         { player1: players[0], player2: players[1] },
@@ -210,12 +209,12 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
                         if (winner != "") {
                             Game.findOneAndUpdate(
                                 { _id: trade.game, winner: null },
-                                { winner: winner.substring(0) },
+                                { status: "Ended", winner: winner.substring(1) },
                                 (err, game) => {} // err means someone else won
                             )
                         }
 
-                        handle(res, err, trade);
+                        handle(res, error, trade);
                     });
                 });
               });
@@ -227,13 +226,20 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
 
 function adjustPlayerCards(playerid, remove, add, next)
 {
-    const newcards = cards.filter(c => !remove.some(rc => c == rc)).concat(add);
-    Player.findOneAndUpdate(
+    Player.findOne(
         { uid: playerid },
-        { cards: newcards, activeTrade: null },
-        { new: true},
         (error, player) => {
-            next(error, player);
+            if (error || player == null) { next(error, player); return; }
+
+            const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
+            Player.findOneAndUpdate(
+                { uid: playerid },
+                { cards: newcards, activeTrade: null },
+                { new: true},
+                (error, player) => {
+                    next(error, player);
+                }
+            );
         }
     );
 }
