@@ -7,7 +7,7 @@ const names = ["gloriousberserkers","hairlessliches","dwarfchangelings","greensp
 /* GET home page. */
 router.get('/', (req, res, next) => {
   var randomname = names[Math.floor(Math.random() * names.length)];
-  if (req.cookies.playerid) randomname = req.cookies.playerid;
+  if (req.cookies.playerid) randomname = req.cookies.playerid.split(".")[1];
   res.render('index', { joingameid: req.query.joingameid, randomname: randomname });
 });
 
