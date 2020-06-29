@@ -138,7 +138,7 @@ a {
 }
 
 #messages p {
-  display: inline;
+  display: hidden;
 }
 
 #messages p:first-child {
