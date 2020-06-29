@@ -2,23 +2,28 @@ extends layout
 
 block content
   div.homepage
-    form(method='POST' action='/joingame')
+    form(id='joinform', method='POST' action='/joingame')
       h1 Join Game
       div.form-group
-        label(for='joingameid') Invite:
-        input#joingameid.form-control(type='text', placeholder='' name='joingameid' required='true' value=joingameid )
-      div.form-group
-        label(for='playername') Name:
+        div(for='playername') Name:
         input#name.form-control(type='text', placeholder='' name='name' required='true' value="#{randomname}" )
+        input#joingameid.form-control(type='hidden', placeholder='' name='joingameid' required='true' value=joingameid )
+      div.form-group
+        div(for='joingameid') Game:
+        ul(class="gamelist")
+          each game in games
+            li(onclick="document.getElementById('joingameid').value = '#{game.name}'; document.getElementById('joinform').submit();") #{game.name}
+      
       button.btn.btn-primary(type='submit') Join
 
 
-    form(method='POST' action='/newgame')
-      h1 New Game
-      div.form-group
-        label(for='name') Name:
-        input#name.form-control(type='text', placeholder='' name='name' required='true' value='' )
-      div.form-group
-        label(for='playerCount') # of Players:
-        input#playerCount.form-control(type='text', placeholder='' name='playerCount' required='true' value='' )
-      button.btn.btn-primary(type='submit') Create
+    if (isAdmin)
+      form(method='POST' action='/newgame')
+        h1 New Game
+        div.form-group
+          label(for='name') Name:
+          input#name.form-control(type='text', placeholder='' name='name' required='true' value='' )
+        div.form-group
+          label(for='playerCount') # of Players:
+          input#playerCount.form-control(type='text', placeholder='' name='playerCount' required='true' value='' )
+        button.btn.btn-primary(type='submit') Create

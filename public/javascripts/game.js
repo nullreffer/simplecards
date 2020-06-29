@@ -10,7 +10,11 @@ function startGame()
 function replayGame(btn)
 {
     $(btn).hide();
-    startGame();
+    const gameid = $("#gameid").val();
+    $.post("/joingame", { joingameid: gameid })
+     .done(() => { location.reload(true); })
+     .fail(() => showalert("It's all coming crashing down."))
+     .always(() => { });
 }
 
 function setBid() {

@@ -36,14 +36,32 @@ function handle(res, err, data)
     if (err || data == null) {
         if (appInsights.defaultClient) appInsights.defaultClient.trackException({exception: new Error(JSON.stringify(err))});
         else console.log(data + " >> " + JSON.stringify(err));
-        res.status(500).json({ message: JSON.stringify(err)});
+        res.status(500).json({ message: err.message ? err.message : JSON.stringify(err)});
     }
     else
         res.status(200).json(data);
 }
 
-router.route('/games/:id').get((req, res, next) => {
-    Game.findById(req.params.id, (error, data) => {
+async function translateGameId(gamename){
+    const hexre = /[0-9A-Fa-f]{6}/g;
+    var actualjoingameid = gamename;
+    if (gamename.length != 24 || !hexre.test(gamename)) {
+      const gameresponse = await Game.findOne({ name: gamename});
+      actualjoingameid = gameresponse._id;
+    }
+
+    return actualjoingameid;
+}
+
+router.route('/games').get((req, res, next) => {
+    Game.find({}, (error, data) => {
+        handle(res, error, data);
+    });
+});
+
+router.route('/games/:id').get(async (req, res, next) => {
+    const gameid = await translateGameId(req.params.id);
+    Game.findById(gameid, (error, data) => {
         handle(res, error, data);
     });
 });
@@ -55,11 +73,19 @@ router.route('/games').post((req, res, next) => {
     );
 });
 
-router.route('/games/:id/join').post((req, res, next) => {
+router.route('/games/:id/join').post(async (req, res, next) => {
+    const gameid = await translateGameId(req.params.id);
+    const game = await Game.findById(gameid);
+
+    if (game.players.length == game.playerCount) {
+        handle(res, { message: "Game full..."}, null);
+        return;
+    }
+
     Player.findOneAndUpdate(
-        { uid: req.params.id + '.' + req.body.name },
+        { uid: gameid + '.' + req.body.name },
         {
-            uid: req.params.id + '.' + req.body.name,
+            uid: gameid + '.' + req.body.name,
             name: req.body.name,
             currentBid: 0,
             activeTrade: null
@@ -69,17 +95,45 @@ router.route('/games/:id/join').post((req, res, next) => {
             if (error || player == null) handle(res, error, {});
             else {
                 Game.updateOne(
-                    {_id: req.params.id},
-                    { $push: { players: player } },
+                    {_id: gameid},
+                    { $push: { players: player, status: "NotStarted" } },
                     (error, data) => handle(res, error, player));
             }
         }
     );
 });
 
-router.route('/games/:id/start').post((req, res, next) => {
+router.route('/games/:id/restart').post(async (req, res, next) => {
+    const gameid = await translateGameId(req.params.id);
     Game.findByIdAndUpdate(
-      req.params.id,
+      gameid,
+      { status: "NotStarted", winner: null },
+      { new: true},
+      async (error, game) => {
+        if (error || game == null) { handle(res, error, {}); return; }
+
+        const handSize = 9;
+        const deck = createDeck(game.playerCount, handSize);
+        try {
+            await Promise.all(game.players.map(async (pid, playerix) => {
+                const player = await Player.findByIdAndUpdate(
+                    pid,
+                    { cards: deck.slice(playerix * handSize, playerix * handSize + handSize) }
+                );                
+                return player;
+            }));
+
+            handle(res, null, {});
+        } catch (error) {
+            handle(res, error, {});
+        }
+    });
+});
+
+router.route('/games/:id/start').post(async (req, res, next) => {
+    const gameid = await translateGameId(req.params.id);
+    Game.findByIdAndUpdate(
+      gameid,
       { status: "Running" },
       { new: true},
       async (error, game) => {
@@ -137,9 +191,9 @@ router.route('/players/:id/setBid').post((req, res, next) => {
     );
 });
 
-router.route('/trades').get((req, res, next) => {
-    const game = req.query.gameid;
-    Trade.find({ game: game}, (error, trades) => {
+router.route('/trades').get(async (req, res, next) => {
+    const gameid = await translateGameId(req.query.gameid);
+    Trade.find({ game: gameid}, (error, trades) => {
         handle(res, error, error ? {} : trades);
     });
 });
@@ -217,14 +271,14 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
                         if (winner != "") {
                             Game.findOneAndUpdate(
                                 { _id: trade.game, winner: null },
-                                { status: "Ended", winner: winner.substring(1) },
+                                { status: "Ended", players: [], winner: winner.substring(1) },
                                 (err, game) => {
                                     if (err) { return; } // err means someone else won
 
                                     Game.updateOne(
                                         {_id: trade.game},
                                         { $push: { history: winner } },
-                                        (error, data) => handle(res, error, player));
+                                        (error, data) => handle(res, error, data));
                                 } 
                             )
                         }
@@ -247,8 +301,6 @@ function adjustPlayerCards(playerid, remove, add, next)
             if (error || player == null) { next(error, player); return; }
 
             const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
-            const playertrade = newcards.length == player.cards.length ? null : player.trade;
-            const playerbid = newcards.length == player.cards.length ? 0 : player.currentBid;
             Player.findOneAndUpdate(
                 { uid: playerid },
                 { cards: newcards },
