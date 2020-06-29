@@ -17,11 +17,12 @@ router.get('/:id/board', async (req, res, next) => {
     return playerresponse.data;
   }));
 
-  const me = players.find(p => p.uid == playerid); me.isMe = true;
+  console.log(">>>" + JSON.stringify(players));
+  const me = players.find(p => p.uid == playerid); if (me) me.isMe = true;
   players.forEach(p => p.cards = p.cards.map(c => { return { text: c, img: "/images/" + (!p.isMe ? "unknown" : c.split("-")[1]) + ".png" }; }));
 
   var all = players.sort((p1, p2) => p1.createdAt < p2.createdAt ? -1 : 1);
-  all = all.filter(p => p.createdAt >= me.createdAt).concat(all.filter(p => p.createdAt < me.createdAt));
+  all = all.filter(p => p.createdAt >= (me ? me.createdAt : "-1")).concat(all.filter(p => p.createdAt < (me ? me.createdAt : "-1")));
   const table = { isTable: true, gamestatus: game.status, canStart: players.length == game.playerCount && game.status == "NotStarted" };
 
   const boardConfigs = [

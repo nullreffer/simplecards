@@ -137,11 +137,11 @@ a {
   color: lightgreen;
 }
 
-#messages p {
-  display: hidden;
+#messages span {
+  display: none;
 }
 
-#messages p:first-child {
+#messages span:first-child {
   display: block !important;
 }
 
@@ -182,18 +182,18 @@ a {
   cursor: pointer;
 }
 
-ul.gamelist {
-  padding: 0;
+table {
+  border-collapse: collapse;
+  width: 50%;
 }
 
-.gamelist li {
-  list-style: none;
+.gamelist td {
   padding: 10px;
   border: 1px solid grey;
   cursor: pointer;
 }
 
-.gamelist li:hover {
+.gamelist td:hover {
   background-color: grey;
 }
 

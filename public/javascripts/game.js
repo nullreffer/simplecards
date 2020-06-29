@@ -111,12 +111,12 @@ function sendCards() {
 
 function showmessage(message)
 {
-    $("#messages").prepend("<p class='message'>" + message + "</p>");
+    $("#messages").prepend("<span class='message'>" + message + "<br/></span>");
 }
 
 function showalert(message)
 {
-    $("#messages").prepend("<p class='alert'>" + message + "</p>");
+    $("#messages").prepend("<span class='alert'>" + message + "<br/></span>");
 }
 
 function onGameRunning(next)
@@ -183,7 +183,15 @@ function onGameRunning(next)
      const gettrades = $.get("/api/trades?gameid=" + $("#gameid").val())
      .done((trades) => {
         if (trades.length == 0) $("#activetrades").html("No active trades");
-        else $("#activetrades").html("").append(trades.map(t => t.player1.split(".")[1] + " <=> " + t.player2.split(".")[1] + " // " + t.ofcount).join("<br/>"));
+        else {
+            // $("#activetrades").html("").append(trades.map(t => t.player1.split(".")[1] + " <=> " + t.player2.split(".")[1] + " // " + t.ofcount).join("<br/>"));
+            const mypid = $(".me").attr("data-id");
+            const mytrade = trades.find(t => t.player1 == mypid || t.player2 == mypid);
+            if (mytrade)
+            {
+                $("#activetrades").html("You are currently trading " + mytrade.ofcount + " cards with " + (mytrade.player1 == mypid ? mytrade.player2 : mytrade.player1).split(".")[1]);
+            }
+        }
      })
      .fail(() => {
         showalert("It's quiet in here.");

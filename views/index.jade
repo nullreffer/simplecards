@@ -10,9 +10,15 @@ block content
         input#joingameid.form-control(type='hidden', placeholder='' name='joingameid' required='true' value=joingameid )
       div.form-group
         div(for='joingameid') Game:
-        ul(class="gamelist")
+        table(class="gamelist")
           each game in games
-            li(onclick="document.getElementById('joingameid').value = '#{game.name}'; document.getElementById('joinform').submit();") #{game.name}
+            tr
+              td(onclick="document.getElementById('joingameid').value = '#{game.name}'; document.getElementById('joinform').submit();") #{game.name}
+              if (isAdmin)
+                td
+                  select
+                    each winner in game.history
+                      option(value="#{winner}") #{winner}
       
       button.btn.btn-primary(type='submit') Join
 

@@ -96,7 +96,7 @@ router.route('/games/:id/join').post(async (req, res, next) => {
             else {
                 Game.updateOne(
                     {_id: gameid},
-                    { $push: { players: player, status: "NotStarted" } },
+                    { $push: { players: player }, status: "NotStarted", winner: null },
                     (error, data) => handle(res, error, player));
             }
         }
@@ -273,7 +273,7 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
                                 { _id: trade.game, winner: null },
                                 { status: "Ended", players: [], winner: winner.substring(1) },
                                 (err, game) => {
-                                    if (err) { return; } // err means someone else won
+                                    if (err) { handle(res, { message: "Someone else won..." }, null); return; } // err means someone else won
 
                                     Game.updateOne(
                                         {_id: trade.game},
@@ -282,8 +282,9 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
                                 } 
                             )
                         }
-
-                        handle(res, error, trade);
+                        else {
+                            handle(res, error, trade);
+                        }
                     });
                 });
               });
