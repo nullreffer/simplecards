@@ -7,8 +7,9 @@ function startGame()
      .always(() => { });
 }
 
-function replayGame()
+function replayGame(btn)
 {
+    $(btn).hide();
     startGame();
 }
 
@@ -19,9 +20,18 @@ function setBid() {
         return;
     }
 
+    if ($("#bidCount").is(":disabled"))
+    {
+        $.post("/api/players/me/setBid", {bid: 0})
+        .done(() => { $("#bidCount").val(0); $("#bidCount").prop("disabled", false); $("#setBid").html("Set"); })
+        .fail(() => showalert("a WTF moment happened"))
+        .always(() => { });
+        return;
+    }
+
     const bidVal = $("#bidCount").val();
     $.post("/api/players/me/setBid", {bid: bidVal})
-     .done(() => {  })
+     .done(() => { $("#bidCount").prop("disabled", true); $("#setBid").html("Reset"); })
      .fail(() => showalert("a WTF moment happened"))
      .always(() => { });
 }
@@ -39,10 +49,10 @@ function acceptBid(playerid, bidButton) {
     // disable all other bid buttons
     $(bidButton).prop("disabled", true);
     const databid = $(bidButton).html();
-    const mybid = $(".me .bidButton").html();
+    const mybid = $("#bidCount").val();
 
     if (databid != mybid) {
-        showalert("So you want to give " + mybid + "but you want to take " + databid + "? No, thank you.");
+        showalert("So you want to give " + mybid + " but you want to take " + databid + "? No, thank you.");
         return;
     }
 
@@ -112,12 +122,12 @@ function onGameRunning(next)
     const cards = $("div.me li.card");
     const getme = $.get("/api/players/me")
     .done((me) => {
-        $("#setbid").prop("disabled", me.activeTrade ? true : false);
         $("#sendCards").prop("disabled", me.activeTrade ? false : true);
-        $(".me .bidButton").html(me.currentBid);
+        // $("#bidCount").val(me.currentBid);
         $("#mytrade").val(me.activeTrade)
         if (me.activeTrade) { $(".bidButton").prop("disabled", true ); meTrading = true; }
-
+        if (me.activeTrade) $("#setBid").prop("disabled", true );
+        else $("#setBid").prop("disabled", false );
         // remove old cards
         cards.each(cid => {
             const c = cards[cid];
@@ -144,10 +154,9 @@ function onGameRunning(next)
     $(".someone").each(function() {
         const someone = $(this);
         const pid = $(this).attr("data-id");
-        const gamestatus = $("#gamestatus").val();
         const getother = $.get("/api/players/" + pid)
         .done((player) => {
-            $(someone).find(".bidButton").prop("disabled", player.currentBid == 0 || player.activeTrade || gamestatus != "Running" ? true : false);
+            $(someone).find(".bidButton").attr("data-trade", player.activeTrade);
             $(someone).find(".bidButton").html(player.currentBid);
         }).fail(() => showalert("I think player " + pid.split(".")[1] + " is sleeping."))
         .always(() => { });
@@ -180,7 +189,15 @@ function onGameRunning(next)
      $.when(getme, ...getothers, getgame, gettrades)
      .done((me, others, game, trades) => { 
         if (meTrading) $(".bidButton").prop("disabled", true);
-         next();
+        $(".bidButton").each((ix, bidButton) => {
+            if ($(bidButton).attr("data-trade")) $(bidButton).prop("disabled", true);
+            else if ($(bidButton).html() == "0") $(bidButton).prop("disabled", true);
+            else if (!$("#bidCount").is(":disabled")) $(bidButton).prop("disabled", true);
+            else if ($(bidButton).html() != $("#bidCount").val()) $(bidButton).prop("disabled", true);
+            else if ($("#gamestatus").val() != "Running")  $(bidButton).prop("disabled", true);
+            else $(bidButton).prop("disabled", false);
+        });
+        next();
     });
 }
 
@@ -212,7 +229,7 @@ function backgroundBoardRefresher() {
             $("#setbid").prop("disabled", true);
             $("#sendCards").prop("disabled", true);
 
-            $("#boardcenter").add("<button onclick='replayGame()' >Play again</buttton>");
+            $("#boardcenter").append("<button onclick='replayGame(this)' >Play again</buttton>");
         });
     }
     else {
@@ -227,6 +244,6 @@ function refreshBoard(next) {
 }
 
 $(document).ready(function() {
-    $.ajaxSetup({ traditional: true });
+    $.ajaxSetup({ traditional: true, cache: false });
     backgroundBoardRefresher();
 });

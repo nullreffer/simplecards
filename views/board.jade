@@ -21,14 +21,23 @@ div(id="boarddiv")
                   if col.isMe
                     input(type="text" class="hidden" id="mytrade" value=col.activeTrade)
 
-                  if col.isMe || board[2][1].activeTrade != null || col.currentBid == 0 || col.activeTrade != null || game.status != 'Running'
+                  if col.isMe
+                    div
+                  else if board[2][1].activeTrade != null || col.currentBid == 0 || col.activeTrade != null || game.status != 'Running' || col.currentBid != board[2][1].currentBid
                     button(class="bidButton", disabled="disabled", onclick=col.isMe ? "" : "acceptBid('#{col.uid}', this)") #{col.currentBid}
                   else
                     button(class="bidButton", onclick="acceptBid('#{col.uid}', this)") #{col.currentBid}
 
                   if col.isMe
-                    input(id="bidCount", type="text", name="title", value="3")
-                    button(id="setBid", onclick="setBid('#{col.uid}')") Set
+                    if col.activeTrade != null || col.currentBid != 0
+                      input(id="bidCount", type="text", name="title", value="#{col.currentBid}", disabled="disabled")
+                    else 
+                      input(id="bidCount", type="text", name="title", value="#{col.currentBid}")
+
+                    if (col.currentBid == 0)
+                      button(id="setBid", onclick="setBid('#{col.uid}')") Set
+                    else
+                      button(id="setBid", onclick="setBid('#{col.uid}')") Reset
                   
                     if col.activeTrade != null
                       button(id="sendCards", onclick="sendCards()") Send Cards

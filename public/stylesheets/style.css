@@ -137,6 +137,14 @@ a {
   color: lightgreen;
 }
 
+#messages p {
+  display: inline;
+}
+
+#messages p:first-child {
+  display: block !important;
+}
+
 #messages .alert{
   color: coral;
 }
@@ -174,4 +182,7 @@ a {
  ::-webkit-scrollbar-thumb { background: #888; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-
+.someone button:disabled,
+.someone button[disabled]{
+  display: none !important;
+}

@@ -1,6 +1,7 @@
 const app = require('express')
 const router = app.Router()
 
+let appInsights = require("applicationinsights");
 let Game = require('./models/game')
 let Player = require('./models/player')
 let Trade = require('./models/trade')
@@ -33,7 +34,8 @@ function shuffle(a) {
 function handle(res, err, data)
 {
     if (err || data == null) {
-        console.log(err ? err : "Data is null");
+        if (appInsights.defaultClient) appInsights.defaultClient.trackException({exception: new Error(JSON.stringify(err))});
+        else console.log(data + " >> " + JSON.stringify(err));
         res.status(500).json({ message: JSON.stringify(err)});
     }
     else
@@ -182,7 +184,8 @@ router.route('/trades').post((req, res, next) => {
 
 router.route('/trades/:id/sendCards').post((req, res, next) => {
     const players = [req.cookies.playerid, req.body.to].sort();
-    const setter = players[0] == req.cookies.playerid ? { player1cards: req.body.cards } : { player2cards: req.body.cards };
+    const postedcards = typeof req.body.cards == "string" ? [ req.body.cards] : req.body.cards;
+    const setter = players[0] == req.cookies.playerid ? { player1cards: postedcards } : { player2cards: postedcards };
     Trade.findOneAndUpdate(
         { player1: players[0], player2: players[1] },
         setter,
@@ -191,7 +194,7 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
           if (error || trade == null) { handle(res, error, {}); return; }
 
           // remove cards I am sending
-          adjustPlayerCards(req.cookies.playerid, req.body.cards, [], (error, player1) => {
+          adjustPlayerCards(req.cookies.playerid, postedcards, [], (error, player1) => {
             if (error || player1 == null) { handle(res, error, {}); return; }
           });
 
@@ -202,9 +205,9 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
               Trade.deleteOne({_id: trade._id}, function(error){
                 if (error) { handle(res, error, trade); return; }
                 
-                adjustPlayerCards(players[0], trade.player1cards, trade.player2cards, (error, player1) => {
+                adjustPlayerCardsEndTrade(players[0], trade.player1cards, trade.player2cards, (error, player1) => {
                     if (error || player1 == null) { handle(res, error, {}); return; }
-                    adjustPlayerCards(players[1], trade.player2cards, trade.player1cards, (error, player2) => {
+                    adjustPlayerCardsEndTrade(players[1], trade.player2cards, trade.player1cards, (error, player2) => {
                         if (error || player2 == null) { handle(res, error, {}); return; }
 
                         var winner = "";
@@ -237,6 +240,28 @@ router.route('/trades/:id/sendCards').post((req, res, next) => {
 });
 
 function adjustPlayerCards(playerid, remove, add, next)
+{
+    Player.findOne(
+        { uid: playerid },
+        (error, player) => {
+            if (error || player == null) { next(error, player); return; }
+
+            const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
+            const playertrade = newcards.length == player.cards.length ? null : player.trade;
+            const playerbid = newcards.length == player.cards.length ? 0 : player.currentBid;
+            Player.findOneAndUpdate(
+                { uid: playerid },
+                { cards: newcards },
+                { new: true},
+                (error, player) => {
+                    next(error, player);
+                }
+            );
+        }
+    );
+}
+
+function adjustPlayerCardsEndTrade(playerid, remove, add, next)
 {
     Player.findOne(
         { uid: playerid },
