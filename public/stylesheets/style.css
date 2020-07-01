@@ -125,9 +125,10 @@ a {
 
 #activetrades {
   height: 49%;
-  border-bottom: 2px solid lightskyblue;
+  border-bottom: 1px solid lightslategray;
   overflow-y: scroll;
   overflow-x: hidden;
+  font-weight: bold;
 }
 
 #messages {
@@ -147,6 +148,7 @@ a {
 
 #messages .alert{
   color: coral;
+  font-weight: bold;
 }
 
 #gamestatusmessage {
@@ -202,7 +204,9 @@ table {
  ::-webkit-scrollbar-thumb { background: #888; }
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
+/*
 .someone button:disabled,
 .someone button[disabled]{
   display: none !important;
 }
+*/

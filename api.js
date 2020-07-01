@@ -96,7 +96,7 @@ router.route('/games/:id/join').post(async (req, res, next) => {
             else {
                 Game.updateOne(
                     {_id: gameid},
-                    { $push: { players: player }, status: "NotStarted", winner: null },
+                    { $addToSet: { players: player }, status: "NotStarted", winner: null },
                     (error, data) => handle(res, error, player));
             }
         }
@@ -304,7 +304,7 @@ function adjustPlayerCards(playerid, remove, add, next)
             const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
             Player.findOneAndUpdate(
                 { uid: playerid },
-                { cards: newcards },
+                { cards: newcards, currentBid: 0 },
                 { new: true},
                 (error, player) => {
                     next(error, player);
@@ -322,11 +322,9 @@ function adjustPlayerCardsEndTrade(playerid, remove, add, next)
             if (error || player == null) { next(error, player); return; }
 
             const newcards = player.cards.filter(c => !remove.some(rc => c == rc)).concat(add);
-            const playertrade = newcards.length == player.cards.length ? null : player.trade;
-            const playerbid = newcards.length == player.cards.length ? 0 : player.currentBid;
             Player.findOneAndUpdate(
                 { uid: playerid },
-                { cards: newcards, activeTrade: playertrade, currentBid: playerbid },
+                { cards: newcards, activeTrade: null, currentBid: 0 },
                 { new: true},
                 (error, player) => {
                     next(error, player);

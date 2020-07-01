@@ -17,15 +17,13 @@ function replayGame(btn)
      .always(() => { });
 }
 
-function setBid() {
-    if ($("#mytrade").val() != "" && $("#mytrade").val() != null)
-    {
-        showalert("Hold your spaceships, finish what you started first.");
-        return;
-    }
+function setBid(doreset) {
+    //if ($("#mytrade").val() != "" && $("#mytrade").val() != null) {
+    //    showalert("Hold your spaceships, finish what you started first.");
+    //    return;
+    //}
 
-    if ($("#bidCount").is(":disabled"))
-    {
+    if ($("#bidCount").is(":disabled")) {
         $.post("/api/players/me/setBid", {bid: 0})
         .done(() => { $("#bidCount").val(0); $("#bidCount").prop("disabled", false); $("#setBid").html("Set"); })
         .fail(() => showalert("a WTF moment happened"))
@@ -34,6 +32,13 @@ function setBid() {
     }
 
     const bidVal = $("#bidCount").val();
+    const allcards = $("div.me li.card").toArray().map((c) => $(c).attr("data-id").split("-")[1]);
+    const cardCounts = {}; allcards.forEach(c => { if (c in cardCounts) cardCounts[c]++; else cardCounts[c] = 1; });
+    if (!Object.values(cardCounts).some(v => v >= bidVal)) {
+        showalert("You do not have enough cards of the same type.");
+        return;
+    }
+
     $.post("/api/players/me/setBid", {bid: bidVal})
      .done(() => { $("#bidCount").prop("disabled", true); $("#setBid").html("Reset"); })
      .fail(() => showalert("a WTF moment happened"))
@@ -92,9 +97,13 @@ function sendCards() {
             return;
         }
 
+        if (!scards.every(c => scards[0].split("-")[1] == c.split("-")[1])) {
+            showalert("You may only pass cards of the same type.");
+            return;
+        }
+
         const allcards = $("div.me li.card").toArray().map((c) => $(c).attr("data-id"));
-        if (allcards.length != 9)
-        {
+        if (allcards.length != 9) {
             showalert("You'll go broke if you keep doing that." );
             return;
         }
@@ -102,7 +111,7 @@ function sendCards() {
         const me = $(".me").attr("data-id");
         const playerto = trade.player1 == me ? trade.player2 : trade.player1;
         $.post("/api/trades/" + $("#mytrade").val() + "/sendCards", { cards: scards, to: playerto })
-        .done(() => { showmessage(trade.ofcount + " cards sent to " + playerto.split(".")[1] + "!!!") })
+        .done(() => { showmessage(trade.ofcount + " cards sent to " + playerto.split(".")[1] + "!!!"); setBid(); })
         .fail(() => showalert("Have you tried hitting the button harder?"))
         .always(() => { });
     }).fail(() => showalert("Yea... maybe try that again?"))
